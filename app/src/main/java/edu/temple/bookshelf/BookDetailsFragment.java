@@ -6,20 +6,25 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
+
 public class BookDetailsFragment extends Fragment {
 
-    MediaControlInterface parentActivity;
+    Context parentActivity;
 
     private static final String BOOK_KEY = "bookKey";
     private Book book;
 
     TextView titleTextView, authorTextView;
     ImageView bookCoverImageView;
+    Button downDeleteButton;
+    File audioBook;
 
 
     public BookDetailsFragment() {}
@@ -36,7 +41,7 @@ public class BookDetailsFragment extends Fragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         if (context instanceof MediaControlInterface)
-            parentActivity = (MediaControlInterface) context;
+            parentActivity = context;
         else
             throw new RuntimeException("Please implement MediaControlInterface");
     }
@@ -56,9 +61,31 @@ public class BookDetailsFragment extends Fragment {
         titleTextView = v.findViewById(R.id.titleTextView);
         authorTextView = v.findViewById(R.id.authorTextView);
         bookCoverImageView = v.findViewById(R.id.coverImageView);
+        audioBook = new File(parentActivity.getExternalFilesDir(null).toString(), book.getId() + ".mp3");
 
         v.findViewById(R.id.playButton).setOnClickListener(view -> {
-            parentActivity.play(book.getId());
+            ((MediaControlInterface)parentActivity).play(book.getId());
+        });
+        downDeleteButton = v.findViewById(R.id.downloadDeleteButton);
+
+        if (audioBook.exists()) {
+            downDeleteButton.setText("Delete");
+        } else {
+            downDeleteButton.setText("Download");
+        }
+        downDeleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (audioBook.exists()) {
+                    audioBook.delete();
+                    downDeleteButton.setText("Download");
+                } else {
+                    downDeleteButton.setText("Delete");
+                    ((MediaControlInterface)parentActivity).downDeleteButtonClicked(book);
+                }
+
+
+            }
         });
 
         if (book != null)
@@ -66,6 +93,8 @@ public class BookDetailsFragment extends Fragment {
 
         return v;
     }
+
+
 
     public void changeBook(Book book) {
         this.book = book;
@@ -76,6 +105,9 @@ public class BookDetailsFragment extends Fragment {
 
     interface MediaControlInterface {
         void play (int bookId);
+        void downDeleteButtonClicked(Book book);
     }
+
+
 
 }

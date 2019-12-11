@@ -13,6 +13,7 @@ public class Book implements Parcelable {
     private int published;
     private String coverUrl;
     private int duration;
+    boolean isDownloaded;
 
     public Book(int id, String title, String author, int published, String coverUrl, int duration) {
         this.id = id;
@@ -21,7 +22,7 @@ public class Book implements Parcelable {
         this.published = published;
         this.coverUrl = coverUrl;
         this.duration = duration;
-
+        this.isDownloaded = isDownloaded;
     }
 
     public Book (JSONObject b) throws JSONException {
@@ -100,6 +101,10 @@ public class Book implements Parcelable {
     public void setDuration(int duration) {
         this.duration = duration;
     }
+
+    public boolean getIsDownloaded() { return isDownloaded;}
+
+    public void setIsDownloaded(boolean isDownloaded) { this.isDownloaded = isDownloaded;}
 
     @Override
     public int describeContents() {

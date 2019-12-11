@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
@@ -22,8 +23,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 
 import edu.temple.audiobookplayer.AudiobookService;
 
@@ -40,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     AudiobookService.MediaControlBinder mediaControlBinder;
     boolean connected;
     SeekBar bookProgressSeekBar;
+    int progress;
 
     private final String SEARCH_URL = "https://kamorris.com/lab/audlib/booksearch.php?search=";
 
@@ -56,6 +63,50 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             connected = false;
         }
     };
+
+    @Override
+    public void downDeleteButtonClicked(Book book) {
+        final int id = book.getId();
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                downloadBookHandler.sendMessage(download(id));
+            }
+        };
+        thread.start();
+    }
+
+    private Message download(int id) {
+        URL downloadBookURL;
+        String path = getExternalFilesDir(null).toString();
+        File output = new File(path, id + ".mp3");
+        output.getParentFile().mkdirs();
+
+        try {
+            downloadBookURL = new URL("https://kamorris.com/lab/audlib/download.php?id=" + id);
+            URLConnection connection = downloadBookURL.openConnection();
+            int connectionLength = connection.getContentLength();
+            DataInputStream stream = new DataInputStream(downloadBookURL.openStream());
+
+            byte[] buffer = new byte[connectionLength];
+            stream.readFully(buffer);
+            stream.close();
+
+            if(!output.exists()) {
+                output.createNewFile();
+            }
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        Message message = Message.obtain();
+        message.obj = "downloaded";
+        return message;
+    }
 
     // Handler to receive downloaded books
     Handler bookHandler = new Handler(new Handler.Callback() {
@@ -88,13 +139,26 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             if (message.obj != null) {
                 currentBook = library.getBookWithId(((AudiobookService.BookProgress) message.obj).getBookId());
                 nowPlayingTextView.setText(String.format(getString(R.string.now_playing), currentBook.getTitle()));
-                int progress = ((AudiobookService.BookProgress) message.obj).getProgress();
+                progress = ((AudiobookService.BookProgress) message.obj).getProgress();
                 bookProgressSeekBar.setProgress((int) ((float) progress / currentBook.getDuration() * bookProgressSeekBar.getMax()));
             } else {
                 bookProgressSeekBar.setProgress(0);
                 nowPlayingTextView.setText(R.string.nothing_playing);
             }
             return true;
+        }
+    });
+
+    Handler downloadBookHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message message) {
+            Log.d("test", "anything");
+            if (message == null) {
+                return false;
+            } else {
+                return true;
+            }
+
         }
     });
 
@@ -130,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         bookProgressSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean byUser) {
-                if (byUser && connected) {
+                if (byUser && connected && (currentBook != null)) {
                     mediaControlBinder.seekTo((int) (((float) i / seekBar.getMax()) * currentBook.getDuration()));
                 }
             }
@@ -252,21 +316,36 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     @Override
     public void play(int bookId) {
         if (connected) {
+            SharedPreferences sharedP = getPreferences(Context.MODE_PRIVATE);
+            File audioBook = new File(getExternalFilesDir(null).toString(), bookId + ".mp3");
             currentBook = library.getBookWithId(bookId);
             // Start service when playing to ensure the book
             // plays continuously, even when activity restarts
             startService(serviceIntent);
-            mediaControlBinder.play(bookId);
+            if (audioBook.exists()) {
+                mediaControlBinder.play(audioBook, sharedP.getInt(String.valueOf(bookId), 0));
+            } else {
+                mediaControlBinder.play(bookId);
+            }
+
         }
     }
 
     public void stop () {
+        SharedPreferences sharedP = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedP.edit();
+        editor.putInt(String.valueOf(currentBook.getId()), 0);
+        editor.commit();
         mediaControlBinder.stop();
         // Service will now stop once the activity unbinds
         stopService(serviceIntent);
     }
 
     public void pause () {
+        SharedPreferences sharedP = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedP.edit();
+        editor.putInt(String.valueOf(currentBook.getId()), progress);
+        editor.commit();
         mediaControlBinder.pause();
     }
 

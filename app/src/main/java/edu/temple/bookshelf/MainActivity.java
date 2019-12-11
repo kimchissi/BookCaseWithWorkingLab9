@@ -14,7 +14,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -166,7 +165,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     Handler downloadBookHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message message) {
-            Log.d("test", "anything");
             if (message == null) {
                 return false;
             } else {
@@ -321,8 +319,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
                         msg.obj = response.toString();
 
-                        Log.d("Books RECEIVED", response.toString());
-
                         bookHandler.sendMessage(msg);
 
                     } catch (Exception e) {
@@ -330,7 +326,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                     }
 
                 } else {
-                    Log.e("Network Error", "Cannot download books");
                 }
             }
         }.start();
@@ -347,7 +342,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             }
             currentBook = library.getBookWithId(bookId);
             File audioBook = new File(getExternalFilesDir(null).toString(), bookId + ".mp3");
-            Log.d("filepath", audioBook.getAbsolutePath());
             // Start service when playing to ensure the book
             // plays continuously, even when activity restarts
             editor.putString(NOWPLAYING_KEY, currentBook.getTitle());
@@ -381,7 +375,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         editor.putBoolean(String.valueOf(currentBook.getId())+"a", true);
         editor.apply();
         editor.commit();
-        Log.d("filepath", currentBook.getId() + " " + sharedP.getInt(String.valueOf(currentBook.getId()),0 ));
 
     }
 

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">BookShelf</string>
+    <string name="now_playing">Now Playing: %1$s</string>
+    <string name="nothing_playing">Nothing Playing</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string-array name="book_titles">
+        <item>The Theory of Everything</item>
+        <item>Hyperspace</item>
+        <item>A Brief History of Time</item>
+        <item>Future Weapons</item>
+    </string-array>
+</resources>

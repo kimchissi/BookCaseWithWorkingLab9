@@ -23,6 +23,7 @@ public class Book implements Parcelable {
         this.coverUrl = coverUrl;
         this.duration = duration;
         this.isDownloaded = isDownloaded;
+
     }
 
     public Book (JSONObject b) throws JSONException {

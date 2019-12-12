@@ -61,18 +61,28 @@ public class BookDetailsFragment extends Fragment {
         titleTextView = v.findViewById(R.id.titleTextView);
         authorTextView = v.findViewById(R.id.authorTextView);
         bookCoverImageView = v.findViewById(R.id.coverImageView);
-        audioBook = new File(parentActivity.getExternalFilesDir(null).toString(), book.getId() + ".mp3");
+        try {
+            audioBook = new File(parentActivity.getExternalFilesDir(null).toString(), book.getId() + ".mp3");
+        } catch (Exception e){
+
+        }
+        //audioBook = new File(parentActivity.getExternalFilesDir(null).toString(), book.getId() + ".mp3");
 
         v.findViewById(R.id.playButton).setOnClickListener(view -> {
             ((MediaControlInterface)parentActivity).play(book.getId());
         });
         downDeleteButton = v.findViewById(R.id.downloadDeleteButton);
 
-        if (audioBook.exists()) {
-            downDeleteButton.setText("Delete");
-        } else {
-            downDeleteButton.setText("Download");
+        try {
+            if (audioBook.exists()) {
+                downDeleteButton.setText("Delete");
+            } else {
+                downDeleteButton.setText("Download");
+            }
+        } catch (Exception e) {
+
         }
+
         downDeleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
